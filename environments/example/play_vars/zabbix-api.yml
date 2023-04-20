@@ -1,0 +1,3 @@
+---
+zabbix_api_create_hostgroup: true
+zabbix_api_create_hosts: true

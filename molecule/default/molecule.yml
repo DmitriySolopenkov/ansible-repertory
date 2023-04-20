@@ -1,0 +1,56 @@
+---
+dependency:
+  name: galaxy
+  options:
+    role-file: requirements.yml
+    roles-path: .imported_roles
+    force: false
+driver:
+  name: docker
+
+lint: |
+  set -e
+  yamllint .
+  flake8
+  ansible-lint
+
+platforms:
+  - name: common
+    image: ubuntu:16.04
+    privileged: true
+    volume_mounts:
+      - "/sys/fs/cgroup:/sys/fs/cgroup:rw"
+    command: /sbin/init
+  - name: zabbix-server
+    groups:
+      - zabbix_server
+    image: ubuntu:16.04
+    privileged: true
+    volume_mounts:
+      - "/sys/fs/cgroup:/sys/fs/cgroup:rw"
+    command: /sbin/init
+    published_ports:
+      - 127.0.0.1:8080:80/tcp
+provisioner:
+  name: ansible
+  inventory:
+    links:
+      group_vars: ../resources/group_vars/
+  env:
+    ANSIBLE_ROLES_PATH: ../../roles/:../../.imported_roles/
+  playbooks:
+    converge: playbook.yml
+  lint:
+    name: ansible-lint
+    options:
+      exclude:
+        - .imported_roles/
+scenario:
+  name: default
+verifier:
+  name: testinfra
+  directory: ../resources/tests/
+  options:
+    n: 4
+  lint:
+    name: flake8
